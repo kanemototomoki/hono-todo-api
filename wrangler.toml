@@ -1,3 +1,7 @@
 name = "hono-todo-api"
 main = "src/index.ts"
 compatibility_date = "2023-01-03"
+
+kv_namespaces = [
+  { binding = "HONO_TODO", preview_id = "f5cd80f40eb34f338c045d12e5034793", id = "6c8ad61f33124061ac43e38fb6861d4e" }
+]

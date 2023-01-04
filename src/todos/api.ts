@@ -1,66 +1,63 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
+import {
+  createTodo,
+  CreateTodo,
+  deleteTodo,
+  getTodo,
+  getTodos,
+  updateTodo,
+  UpdateTodo,
+} from './model';
+import { Env } from '../../index';
 
-let todoList = [
-  { id: '1', title: 'Learning Hono', completed: false },
-  { id: '2', title: 'Watch the movie', completed: true },
-  { id: '3', title: 'Buy milk', completed: false },
-];
+const schema = z.object({
+  title: z.string().trim().min(1),
+});
 
-const todos = new Hono();
+const todos = new Hono<{ Bindings: Env }>();
 
-todos.get('/', (c) => c.json(todoList));
+todos.get('/', async (c) => {
+  const todos = await getTodos(c.env.HONO_TODO);
+  return c.json(todos);
+});
 
+todos.post('/', async (c) => {
+  const param = await c.req.json<CreateTodo>();
+  const parseBody = schema.safeParse(param);
 
-// TODO: zodに変更する
-todos.post(
-  '/',
-
-  async (c) => {
-    const param = await c.req.json<{ title: string }>();
-    const newTodo = {
-      id: String(todoList.length + 1),
-      completed: false,
-      title: param.title,
-    };
-    todoList = [...todoList, newTodo];
-
-    return c.json(newTodo, 201);
+  if (!parseBody.success) {
+    return c.json({ error: 'Title is require' }, 400);
   }
-);
+
+  const newTodo = await createTodo(c.env.HONO_TODO, param);
+
+  return c.json(newTodo, 201);
+});
 
 todos.put('/:id', async (c) => {
   const id = c.req.param('id');
-  const todo = todoList.find((todo) => todo.id === id);
+  const todo = await getTodo(c.env.HONO_TODO, id);
 
   if (!todo) {
     return c.json({ message: 'not found' }, 404);
   }
 
-  const param = (await c.req.parseBody()) as {
-    title?: string;
-    completed?: boolean;
-  };
-  todoList = todoList.map((todo) => {
-    if (todo.id === id) {
-      return {
-        ...todo,
-        ...param,
-      };
-    } else {
-      return todo;
-    }
-  });
+  const param = await c.req.json<UpdateTodo>();
+  await updateTodo(c.env.HONO_TODO, id, param);
 
   return new Response(null, { status: 204 });
 });
 
 todos.delete('/:id', async (c) => {
   const id = c.req.param('id');
-  const todo = todoList.find((todo) => todo.id === id);
+  const todo = await getTodo(c.env.HONO_TODO, id);
+
   if (!todo) {
     return c.json({ message: 'not found' }, 404);
   }
-  todoList = todoList.filter((todo) => todo.id !== id);
+
+  await deleteTodo(c.env.HONO_TODO, id);
 
   return new Response(null, { status: 204 });
 });
