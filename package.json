@@ -14,6 +14,7 @@
   "scripts": {
     "start": "wrangler dev",
     "deploy": "wrangler publish",
+    "build": "esbuild --bundle --outdir=dist ./src/index.ts",
     "test": "jest --verbose --watch"
   },
   "dependencies": {
