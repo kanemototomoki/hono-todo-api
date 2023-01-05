@@ -21,6 +21,7 @@ jobs:
         run: npm run build
       - name: Publish
         uses: cloudflare/wrangler-action@2.0.0
-        env:
+        with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
+        env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
